@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Skeleton lambda function
+Resources:
+
+  SkeletonLambda:
+    Type: AWS::Lambda::Function
+    Description: Skeleton Lambda
+    Properties:
+      Description: Skeleton Lambda
+      Runtime: java11
+      MemorySize: 512
+      Timeout: 15
+      Role: !GetAtt SkeletonLambdaIAMRole.Arn
+      Handler: demo.lambda.RequestHandlerMain
+      Code:
+        S3Bucket: faraz-sydney-bucket
+        S3Key: lambda-skeleton/java11-lambda-skeleton.jar
+      Environment:
+        Variables:
+          AWS_WHATS_NEW_FEED_URL: https://aws.amazon.com/new/feed/
+
+  SkeletonLambdaIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  SkeletonLambdaCloudWatchTriggerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SkeletonLambda
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ScheduleSkeletonLambdaPollInterval.Arn
+
+  ScheduleSkeletonLambdaPollInterval:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Trigger SkeletonLambda
+      Name: TriggerSkeletonLambda
+      ScheduleExpression: rate(4 hours)
+      State: ENABLED
+      Targets:
+        -
+          Arn: !GetAtt SkeletonLambda.Arn
+          Id: '1'
+
+Outputs:
+  SkeletonLambdaArn:
+    Description: 'ARN of SkeletonLambda'
+    Value: !GetAtt SkeletonLambda.Arn
+
+
